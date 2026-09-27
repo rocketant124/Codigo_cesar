@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cifrador César - GitHub Pages</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- EmailJS SDK para envío de correos sin backend -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <div class="card shadow border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h3 class="mb-0 fw-bold">🔐 Cifrado César Web</h3>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Contenedor para Alertas -->
+                    <div id="alertContainer"></div>
+
+                    <!-- Pestañas Encriptar / Desencriptar -->
+                    <ul class="nav nav-pills nav-justified mb-4" id="cipherTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-semibold" id="encrypt-tab" data-bs-toggle="pill" data-bs-target="#encrypt" type="button" role="tab">
+                                🔐 Encriptar & Enviar
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-semibold" id="decrypt-tab" data-bs-toggle="pill" data-bs-target="#decrypt" type="button" role="tab">
+                                🔓 Desencriptar
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="cipherTabContent">
+                        
+                        <!-- PESTAÑA 1: ENCRIPTAR -->
+                        <div class="tab-pane fade show active" id="encrypt" role="tabpanel">
+                            <form id="formEncriptar">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Mensaje (Exactamente 20 caracteres):</label>
+                                    <input type="text" id="mensajeEnc" class="form-control" placeholder="Ej: HolaMundo1234567890!" maxlength="20" minlength="20" required>
+                                    <div class="form-text">Largo exacto requerido: 20 caracteres.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Variable K (Desplazamiento):</label>
+                                    <input type="number" id="kEnc" class="form-control" placeholder="Ej: 3" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Correo Electrónico Destinatario:</label>
+                                    <input type="email" id="correoEnc" class="form-control" placeholder="ejemplo@correo.com" required>
+                                </div>
+
+                                <button type="submit" id="btnEnviar" class="btn btn-primary w-100 fw-bold py-2">
+                                    Encriptar y Enviar Correo
+                                </button>
+                            </form>
+
+                            <div id="resultadoEncCard" class="mt-4 p-3 bg-white rounded border border-primary d-none">
+                                <h6 class="text-primary fw-bold">Resultado Encriptado:</h6>
+                                <p id="txtResultadoEnc" class="fs-5 text-break font-monospace fw-bold mb-1"></p>
+                                <small id="infoEnvio" class="text-muted"></small>
+                            </div>
+                        </div>
+
+                        <!-- PESTAÑA 2: DESENCRIPTAR -->
+                        <div class="tab-pane fade" id="decrypt" role="tabpanel">
+                            <form id="formDesencriptar">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Mensaje Encriptado:</label>
+                                    <input type="text" id="mensajeDec" class="form-control" placeholder="Ingrese el texto cifrado" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Variable K (Desplazamiento):</label>
+                                    <input type="number" id="kDec" class="form-control" placeholder="Ej: 3" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-success w-100 fw-bold py-2">
+                                    Desencriptar Mensaje
+                                </button>
+                            </form>
+
+                            <div id="resultadoDecCard" class="mt-4 p-3 bg-white rounded border border-success d-none">
+                                <h6 class="text-success fw-bold">Texto Plano Recuperado:</h6>
+                                <p id="txtResultadoDec" class="fs-5 text-break font-monospace fw-bold mb-0"></p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Scripts de Bootstrap y EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<script>
+    // =========================================================
+    // ⚙️ CONFIGURACIÓN DE EMAILJS (REEMPLAZA ESTOS TRES CAMPOS)
+    // =========================================================
+    const EMAILJS_PUBLIC_KEY = "9xOy8i9pyZrdJaRNJ"; 
+    const EMAILJS_SERVICE_ID = "service_wrgvkih"; 
+    const EMAILJS_TEMPLATE_ID = "template_fs65jfd"; 
+
+    // Inicializar SDK de EmailJS
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    // Lógica del Cifrado César
+    function cifrarCesar(texto, k) {
+        let resultado = "";
+        k = parseInt(k) % 26;
+        if (k < 0) k += 26;
+
+        for (let i = 0; i < texto.length; i++) {
+            let char = texto[i];
+            let code = char.charCodeAt(0);
+
+            if (code >= 65 && code <= 90) {
+                char = String.fromCharCode(((code - 65 + k) % 26) + 65);
+            } else if (code >= 97 && code <= 122) {
+                char = String.fromCharCode(((code - 97 + k) % 26) + 97);
+            }
+            resultado += char;
+        }
+        return resultado;
+    }
+
+    function descifrarCesar(textoCifrado, k) {
+        return cifrarCesar(textoCifrado, -parseInt(k));
+    }
+
+    function mostrarAlerta(mensaje, tipo) {
+        document.getElementById('alertContainer').innerHTML = `
+            <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+    }
+
+    // FORMULARIO ENCRIPTAR Y ENVIAR
+    document.getElementById('formEncriptar').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const mensaje = document.getElementById('mensajeEnc').value;
+        const k = document.getElementById('kEnc').value;
+        const correo = document.getElementById('correoEnc').value;
+        const btnEnviar = document.getElementById('btnEnviar');
+
+        if (mensaje.length !== 20) {
+            mostrarAlerta('Error: El mensaje debe tener exactamente 20 caracteres.', 'danger');
+            return;
+        }
+
+        const cifrado = cifrarCesar(mensaje, k);
+
+        // Deshabilitar botón durante el envío
+        btnEnviar.disabled = true;
+        btnEnviar.innerText = "Enviando correo...";
+
+        // Enviar Correo usando EmailJS
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            to_email: correo,
+            k_val: k,
+            encrypted_msg: cifrado
+        })
+        .then(function() {
+            btnEnviar.disabled = false;
+            btnEnviar.innerText = "Encriptar y Enviar Correo";
+
+            document.getElementById('txtResultadoEnc').textContent = cifrado;
+            document.getElementById('infoEnvio').textContent = `Clave K=${k} | Destino: ${correo}`;
+            document.getElementById('resultadoEncCard').classList.remove('d-none');
+
+            mostrarAlerta(`¡Mensaje cifrado con éxito y <b>enviado a tu correo (${correo})</b>!`, 'success');
+        }, function(error) {
+            btnEnviar.disabled = false;
+            btnEnviar.innerText = "Encriptar y Enviar Correo";
+            
+            mostrarAlerta('Error al enviar el correo real: ' + JSON.stringify(error), 'danger');
+        });
+    });
+
+    // FORMULARIO DESENCRIPTAR
+    document.getElementById('formDesencriptar').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const mensajeCifrado = document.getElementById('mensajeDec').value;
+        const k = document.getElementById('kDec').value;
+
+        const plano = descifrarCesar(mensajeCifrado, k);
+
+        document.getElementById('txtResultadoDec').textContent = plano;
+        document.getElementById('resultadoDecCard').classList.remove('d-none');
+
+        mostrarAlerta('¡Mensaje desencriptado correctamente!', 'success');
+    });
+</script>
+
+</body>
+</html>
+
+
